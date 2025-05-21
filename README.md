@@ -25,3 +25,4 @@ Nome = lamball.
 ```
 encontra_pal(neutro, Nome).
 ```
+Lista = [lamball, cattiva, chikipi].
