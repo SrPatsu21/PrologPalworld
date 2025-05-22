@@ -62,62 +62,90 @@ trabalhos_possiveis([acendimento, mineracao, corte, plantio, coleta, transporte,
 % Predicado principal do Akinator
 akinator :-
     write('Pense em um Pal e eu tentarei adivinhar quem é.'), nl,
-    tipos_possiveis(ListaTipos),
-    perguntar_caracteristicas('tipo', ListaTipos, 2, TiposConfirmados),
-    trabalhos_possiveis(ListaTrabalhos),
-    perguntar_caracteristicas('habilidade de trabalho', ListaTrabalhos, _, TrabalhosConfirmados),
     write('O Pal é montável? (sim/nao/nao_sei): '),
     read(RespMontaria),
-    filtrar_pals(TiposConfirmados, TrabalhosConfirmados, RespMontaria, PalsFiltrados),
-    exibir_resultado(PalsFiltrados).
+    findall(Nome, pal(_, Nome, _, _, _, _), ListaPals),
+    filtrar_montaria(ListaPals, RespMontaria, PalsFiltrados),
+    tipos_possiveis(ListaTipos),
+    trabalhos_possiveis(ListaTrabalhos),
+    intercalar(ListaTipos, ListaTrabalhos, ListaPerguntas),
+    perguntar_caracteristicas(ListaPerguntas, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal),
+    exibir_resultado(ResultadoFinal).
 
-% Predicado para perguntar sobre características com limite opcional
-perguntar_caracteristicas(_, [], _, []).
+% Intercala duas listas
+intercalar([], [], []).
+intercalar([H1|T1], [], [tipo-H1|Resto]) :-
+    intercalar(T1, [], Resto).
+intercalar([], [H2|T2], [trabalho-H2|Resto]) :-
+    intercalar([], T2, Resto).
+intercalar([H1|T1], [H2|T2], [tipo-H1, trabalho-H2|Resto]) :-
+    intercalar(T1, T2, Resto).
 
-perguntar_caracteristicas(TipoCaracteristica, [Caracteristica|Resto], Limite, Confirmados) :-
-    (nonvar(Limite), Limite =< 0 ->
-        Confirmados = []
+% Pergunta sobre características e filtra os Pals
+perguntar_caracteristicas([], Pals, _, _, Pals).
+perguntar_caracteristicas(_, [Unico], _, _, [Unico]) :-
+    write('Você está pensando em: '), write(Unico), nl,
+    write('Fim do jogo!'), nl.
+perguntar_caracteristicas([tipo-Tipo|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
+    length(TiposConfirmados, N),
+    N >= 2,
+    perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal).
+perguntar_caracteristicas([tipo-Tipo|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
+    length(TiposConfirmados, N),
+    N < 2,
+    format('O Pal possui o tipo ~w? (sim/nao/nao_sei): ', [Tipo]),
+    read(Resposta),
+    (Resposta == sim ->
+        incluir_tipo(Pals, Tipo, PalsFiltrados),
+        append(TiposConfirmados, [Tipo], NovosTipos)
     ;
-        format('O Pal possui a ~w ~w? (sim/nao/nao_sei): ', [TipoCaracteristica, Caracteristica]),
-        read(Resposta),
-        (Resposta == sim ->
-            (nonvar(Limite) ->
-                NovoLimite is Limite - 1
-            ;
-                NovoLimite = Limite
-            ),
-            Confirmados = [Caracteristica|ConfirmadosResto]
-        ;
-            NovoLimite = Limite,
-            Confirmados = ConfirmadosResto
-        ),
-        perguntar_caracteristicas(TipoCaracteristica, Resto, NovoLimite, ConfirmadosResto)
-    ).
+        PalsFiltrados = Pals,
+        NovosTipos = TiposConfirmados
+    ),
+    perguntar_caracteristicas(Resto, PalsFiltrados, NovosTipos, TrabalhosConfirmados, ResultadoFinal).
+perguntar_caracteristicas([trabalho-Trabalho|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
+    format('O Pal possui a habilidade de trabalho ~w? (sim/nao/nao_sei): ', [Trabalho]),
+    read(Resposta),
+    (Resposta == sim ->
+        incluir_trabalho(Pals, Trabalho, PalsFiltrados),
+        append(TrabalhosConfirmados, [Trabalho], NovosTrabalhos)
+    ;
+        PalsFiltrados = Pals,
+        NovosTrabalhos = TrabalhosConfirmados
+    ),
+    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, NovosTrabalhos, ResultadoFinal).
 
-% Filtra os Pals com base nas características confirmadas
-filtrar_pals(TiposConfirmados, TrabalhosConfirmados, RespMontaria, PalsFiltrados) :-
-    findall(Nome, (
-        pal(_, Nome, Tipos, Trabalhos, Montaria, _),
-        inclui_todos(TiposConfirmados, Tipos),
-        inclui_todos(TrabalhosConfirmados, Trabalhos),
-        (RespMontaria == nao_sei ; Montaria == RespMontaria)
-    ), PalsFiltrados).
+% Filtra Pals por montaria
+filtrar_montaria(Pals, nao_sei, Pals).
+filtrar_montaria(Pals, RespMontaria, PalsFiltrados) :-
+    include(tem_montaria(RespMontaria), Pals, PalsFiltrados).
 
-% Verifica se todos os elementos de Sublista estão em Lista
-inclui_todos([], _).
-inclui_todos([H|T], Lista) :-
-    member(H, Lista),
-    inclui_todos(T, Lista).
+tem_montaria(Resp, Nome) :-
+    pal(_, Nome, _, _, Resp, _).
+
+% Inclui Pals que possuem o tipo especificado
+incluir_tipo(Pals, Tipo, PalsFiltrados) :-
+    include(tem_tipo(Tipo), Pals, PalsFiltrados).
+
+tem_tipo(Tipo, Nome) :-
+    pal(_, Nome, Tipos, _, _, _),
+    member(Tipo, Tipos).
+
+% Inclui Pals que possuem a habilidade de trabalho especificada
+incluir_trabalho(Pals, Trabalho, PalsFiltrados) :-
+    include(tem_trabalho(Trabalho), Pals, PalsFiltrados).
+
+tem_trabalho(Trabalho, Nome) :-
+    pal(_, Nome, _, Trabalhos, _, _),
+    member(Trabalho, Trabalhos).
 
 % Exibe o resultado final
 exibir_resultado([]) :-
     write('Não consegui encontrar um Pal com essas características.'), nl,
     write('Fim do jogo!'), nl.
-
 exibir_resultado([Unico]) :-
     write('Você está pensando em: '), write(Unico), nl,
     write('Fim do jogo!'), nl.
-
 exibir_resultado(Pals) :-
     write('Os Pals que correspondem às características são: '), nl,
     listar_pals(Pals),
