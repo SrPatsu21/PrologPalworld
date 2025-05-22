@@ -16,13 +16,53 @@ swipl -s palworld.pl
 
 ## TEST
 
+### Searchs
 ```
-encontra_pal(neutro, [trabalho_manual, transporte], [fluffy_shield], Nome).
+buscar_por_nome(lamball, Numero, Tipo, Trabalhos, Montaria, Passivas).
 ```
-Nome = lamball.
+Numero = 1,
+Tipo = neutro,
+Trabalhos = [trabalho_manual, transporte, agricultura],
+Montaria = nao,
+Passivas = [fluffy_shield].
 
 
 ```
-encontra_pal(neutro, Nome).
+buscar_por_tipo(neutro, ListaNomes).
 ```
-Lista = [lamball, cattiva, chikipi].
+ListaNomes = [lamball, cattiva, chikipi, direhowl].
+
+
+```
+buscar_por_tipos([neutro], ListaNomes).
+```
+ListaNomes = [lamball, cattiva, chikipi, direhowl]
+
+
+```
+buscar_por_trabalho(mineracao, ListaNomes).
+```
+ListaNomes = [cattiva, rushoar, mammorest].
+
+
+```
+buscar_por_trabalhos([transporte, corte], ListaNomes).
+```
+ListaNomes = [mossanda, grizzbolt].
+
+
+```
+buscar_por_montaria(ListaNomes).
+```
+ListaNomes = [rushoar, direhowl, mossanda, galeclaw, kitsun, surfent, mammorest, grizzbolt, jetragon].
+
+
+```
+buscar_por_numero(103, Nome, Tipo, Trabalhos, Montaria, Passivas).
+```
+Nome = grizzbolt,
+Tipo = eletrico,
+Trabalhos = [geracao_eletricidade, trabalho_manual, transporte, corte],
+Montaria = sim,
+Passivas = [yellow_tank].
+
