@@ -62,45 +62,69 @@ trabalhos_possiveis([acendimento, mineracao, corte, plantio, coleta, transporte,
 % Predicado principal do Akinator
 akinator :-
     write('Pense em um Pal e eu tentarei adivinhar quem é.'), nl,
-    % Obter lista de tipos confirmados
     tipos_possiveis(ListaTipos),
-    perguntar_caracteristicas('tipo', ListaTipos, TiposConfirmados),
-    % Obter lista de trabalhos confirmados
+    perguntar_caracteristicas('tipo', ListaTipos, 2, TiposConfirmados),
     trabalhos_possiveis(ListaTrabalhos),
-    perguntar_caracteristicas('habilidade de trabalho', ListaTrabalhos, TrabalhosConfirmados),
-    % Perguntar se é montável
+    perguntar_caracteristicas('habilidade de trabalho', ListaTrabalhos, _, TrabalhosConfirmados),
     write('O Pal é montável? (sim/nao/nao_sei): '),
     read(RespMontaria),
-    % Filtrar Pals com base nas respostas
+    filtrar_pals(TiposConfirmados, TrabalhosConfirmados, RespMontaria, PalsFiltrados),
+    exibir_resultado(PalsFiltrados).
+
+% Predicado para perguntar sobre características com limite opcional
+perguntar_caracteristicas(_, [], _, []).
+
+perguntar_caracteristicas(TipoCaracteristica, [Caracteristica|Resto], Limite, Confirmados) :-
+    (nonvar(Limite), Limite =< 0 ->
+        Confirmados = []
+    ;
+        format('O Pal possui a ~w ~w? (sim/nao/nao_sei): ', [TipoCaracteristica, Caracteristica]),
+        read(Resposta),
+        (Resposta == sim ->
+            (nonvar(Limite) ->
+                NovoLimite is Limite - 1
+            ;
+                NovoLimite = Limite
+            ),
+            Confirmados = [Caracteristica|ConfirmadosResto]
+        ;
+            NovoLimite = Limite,
+            Confirmados = ConfirmadosResto
+        ),
+        perguntar_caracteristicas(TipoCaracteristica, Resto, NovoLimite, ConfirmadosResto)
+    ).
+
+% Filtra os Pals com base nas características confirmadas
+filtrar_pals(TiposConfirmados, TrabalhosConfirmados, RespMontaria, PalsFiltrados) :-
     findall(Nome, (
         pal(_, Nome, Tipos, Trabalhos, Montaria, _),
         inclui_todos(TiposConfirmados, Tipos),
         inclui_todos(TrabalhosConfirmados, Trabalhos),
         (RespMontaria == nao_sei ; Montaria == RespMontaria)
-    ), PalsFiltrados),
-    % Exibir resultado
-    (PalsFiltrados = [] ->
-        write('Não consegui encontrar um Pal com essas características.'), nl
-    ;
-        write('Você está pensando em: '), write(PalsFiltrados), nl
-    ),
-    write('Fim do jogo!'), nl.
-
-% Predicado para perguntar sobre características
-perguntar_caracteristicas(_, [], []).
-
-perguntar_caracteristicas(TipoCaracteristica, [Caracteristica|Resto], Confirmados) :-
-    format('O Pal possui a ~w ~w? (sim/nao/nao_sei): ', [TipoCaracteristica, Caracteristica]),
-    read(Resposta),
-    (Resposta == sim ->
-        Confirmados = [Caracteristica|ConfirmadosResto]
-    ;
-        Confirmados = ConfirmadosResto
-    ),
-    perguntar_caracteristicas(TipoCaracteristica, Resto, ConfirmadosResto).
+    ), PalsFiltrados).
 
 % Verifica se todos os elementos de Sublista estão em Lista
 inclui_todos([], _).
 inclui_todos([H|T], Lista) :-
     member(H, Lista),
     inclui_todos(T, Lista).
+
+% Exibe o resultado final
+exibir_resultado([]) :-
+    write('Não consegui encontrar um Pal com essas características.'), nl,
+    write('Fim do jogo!'), nl.
+
+exibir_resultado([Unico]) :-
+    write('Você está pensando em: '), write(Unico), nl,
+    write('Fim do jogo!'), nl.
+
+exibir_resultado(Pals) :-
+    write('Os Pals que correspondem às características são: '), nl,
+    listar_pals(Pals),
+    write('Fim do jogo!'), nl.
+
+% Lista os Pals encontrados
+listar_pals([]).
+listar_pals([H|T]) :-
+    write('- '), write(H), nl,
+    listar_pals(T).
