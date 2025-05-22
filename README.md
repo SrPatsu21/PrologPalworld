@@ -14,9 +14,9 @@ sudo apt-get install swi-prolog
 swipl -s palworld.pl
 ```
 
-## TEST
+## TESTE
 
-### Searchs
+### Pesquisas
 ```
 buscar_por_nome(lamball, Numero, Tipo, Trabalhos, Montaria, Passivas).
 ```
@@ -65,4 +65,10 @@ Tipo = eletrico,
 Trabalhos = [geracao_eletricidade, trabalho_manual, transporte, corte],
 Montaria = sim,
 Passivas = [yellow_tank].
+
+### Pal Akinator
+
+```
+akinator.
+```
 

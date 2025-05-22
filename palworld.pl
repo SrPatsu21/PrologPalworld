@@ -1,3 +1,4 @@
+% DATABASE
 % pal(Número, Nome, Tipos, Trabalhos, Montaria, Passivas).
 pal(1, lamball, [neutro], [trabalho_manual, transporte, agricultura], nao, [fluffy_shield]).
 pal(2, cattiva, [neutro], [trabalho_manual, transporte, coleta, mineracao], nao, [cat_helper]).
@@ -14,6 +15,8 @@ pal(90, mammorest, [terra], [corte, mineracao], sim, [gaia_crusher]).
 pal(103, grizzbolt, [eletrico], [geracao_eletricidade, trabalho_manual, transporte, corte], sim, [yellow_tank]).
 pal(110, jetragon, [dragao], [coleta], sim, [aerial_missile]).
 
+
+% Filtros
 % Predicado para buscar por nome
 % buscar_por_nome(+Nome, -Numero, -Tipo, -Trabalhos, -Montaria, -Passivas)
 buscar_por_nome(Nome, Numero, Tipo, Trabalhos, Montaria, Passivas) :-
@@ -48,3 +51,56 @@ buscar_por_montaria(ListaNomes) :-
 % buscar_por_numero(+Numero, -Nome, -Tipo, -Trabalhos, -Montaria, -Passivas)
 buscar_por_numero(Numero, Nome, Tipo, Trabalhos, Montaria, Passivas) :-
     pal(Numero, Nome, Tipo, Trabalhos, Montaria, Passivas).
+
+
+% Lista de todos os tipos possíveis
+tipos_possiveis([fogo, agua, planta, eletrico, gelo, terra, ar, metal, sombrio, psiquico]).
+
+% Lista de todas as habilidades de trabalho possíveis
+trabalhos_possiveis([acendimento, mineracao, corte, plantio, coleta, transporte, resfriamento, aquecimento, iluminacao, defesa]).
+
+% Predicado principal do Akinator
+akinator :-
+    write('Pense em um Pal e eu tentarei adivinhar quem é.'), nl,
+    % Obter lista de tipos confirmados
+    tipos_possiveis(ListaTipos),
+    perguntar_caracteristicas('tipo', ListaTipos, TiposConfirmados),
+    % Obter lista de trabalhos confirmados
+    trabalhos_possiveis(ListaTrabalhos),
+    perguntar_caracteristicas('habilidade de trabalho', ListaTrabalhos, TrabalhosConfirmados),
+    % Perguntar se é montável
+    write('O Pal é montável? (sim/nao/nao_sei): '),
+    read(RespMontaria),
+    % Filtrar Pals com base nas respostas
+    findall(Nome, (
+        pal(_, Nome, Tipos, Trabalhos, Montaria, _),
+        inclui_todos(TiposConfirmados, Tipos),
+        inclui_todos(TrabalhosConfirmados, Trabalhos),
+        (RespMontaria == nao_sei ; Montaria == RespMontaria)
+    ), PalsFiltrados),
+    % Exibir resultado
+    (PalsFiltrados = [] ->
+        write('Não consegui encontrar um Pal com essas características.'), nl
+    ;
+        write('Você está pensando em: '), write(PalsFiltrados), nl
+    ),
+    write('Fim do jogo!'), nl.
+
+% Predicado para perguntar sobre características
+perguntar_caracteristicas(_, [], []).
+
+perguntar_caracteristicas(TipoCaracteristica, [Caracteristica|Resto], Confirmados) :-
+    format('O Pal possui a ~w ~w? (sim/nao/nao_sei): ', [TipoCaracteristica, Caracteristica]),
+    read(Resposta),
+    (Resposta == sim ->
+        Confirmados = [Caracteristica|ConfirmadosResto]
+    ;
+        Confirmados = ConfirmadosResto
+    ),
+    perguntar_caracteristicas(TipoCaracteristica, Resto, ConfirmadosResto).
+
+% Verifica se todos os elementos de Sublista estão em Lista
+inclui_todos([], _).
+inclui_todos([H|T], Lista) :-
+    member(H, Lista),
+    inclui_todos(T, Lista).
