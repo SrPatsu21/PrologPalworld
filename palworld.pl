@@ -16,6 +16,7 @@ pal(103, grizzbolt, [eletrico], [geracao_eletricidade, trabalho_manual, transpor
 pal(110, jetragon, [dragao], [coleta], sim, [aerial_missile]).
 
 
+%-------------------------------------------------------------------------------------------------------------------------------%
 % Filtros
 % Predicado para buscar por nome
 % buscar_por_nome(+Nome, -Numero, -Tipo, -Trabalhos, -Montaria, -Passivas)
@@ -52,7 +53,7 @@ buscar_por_montaria(ListaNomes) :-
 buscar_por_numero(Numero, Nome, Tipo, Trabalhos, Montaria, Passivas) :-
     pal(Numero, Nome, Tipo, Trabalhos, Montaria, Passivas).
 
-
+%-------------------------------------------------------------------------------------------------------------------------------%
 % Lista de todos os tipos possíveis
 tipos_possiveis([fogo, agua, planta, eletrico, gelo, terra, ar, metal, sombrio, psiquico]).
 
@@ -69,8 +70,9 @@ akinator :-
     tipos_possiveis(ListaTipos),
     trabalhos_possiveis(ListaTrabalhos),
     intercalar(ListaTipos, ListaTrabalhos, ListaPerguntas),
-    perguntar_caracteristicas(ListaPerguntas, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal),
+    perguntar_caracteristicas(ListaPerguntas, PalsFiltrados, [], [], ResultadoFinal),
     exibir_resultado(ResultadoFinal).
+    limpar_variaveis.
 
 % Intercala duas listas
 intercalar([], [], []).
@@ -118,7 +120,7 @@ perguntar_caracteristicas([trabalho-Trabalho|Resto], Pals, TiposConfirmados, Tra
 % Filtra Pals por montaria
 filtrar_montaria(Pals, nao_sei, Pals).
 filtrar_montaria(Pals, RespMontaria, PalsFiltrados) :-
-    include(tem_montaria(RespMontaria), Pals, PalsFiltrados).
+    include({RespMontaria}/[Nome]>>pal(_, Nome, _, _, RespMontaria, _), Pals, PalsFiltrados).
 
 tem_montaria(Resp, Nome) :-
     pal(_, Nome, _, _, Resp, _).
@@ -147,8 +149,9 @@ exibir_resultado([Unico]) :-
     write('Você está pensando em: '), write(Unico), nl,
     write('Fim do jogo!'), nl.
 exibir_resultado(Pals) :-
+    sort(Pals, PalsOrdenados),
     write('Os Pals que correspondem às características são: '), nl,
-    listar_pals(Pals),
+    listar_pals(PalsOrdenados),
     write('Fim do jogo!'), nl.
 
 % Lista os Pals encontrados
@@ -156,3 +159,8 @@ listar_pals([]).
 listar_pals([H|T]) :-
     write('- '), write(H), nl,
     listar_pals(T).
+
+limpar_variaveis :-
+    nb_delete(tipos_confirmados),
+    nb_delete(trabalhos_confirmados),
+    nb_delete(pals_filtrados).
