@@ -1,175 +1,173 @@
-% BASE DE DADOS
-% pal(Número, Nome, Tipos, Trabalhos, Montaria, Passivas).
-:- [base_palworld].
+% Base de conhecimento dos Pals
+pal(lamball) :-
+    verificar(tipo_neutro),
+    verificar(trabalho_manual),
+    verificar(transporte),
+    verificar(agricultura),
+    verificar(passiva_fluffy_shield),
+    verificar(nao_montavel).
 
-%-------------------------------------------------------------------------------------------------------------------------------%
-% Tipos e Trabalhos disponíveis
-tipos_possiveis([fogo, agua, grama, eletrico, terra, vento, dragao, neutro]).
-trabalhos_possiveis([trabalho_manual, transporte, agricultura, coleta, mineracao, plantio, corte, producao_medicinal, acendimento, geracao_eletricidade]).
+pal(cattiva) :-
+    verificar(tipo_neutro),
+    verificar(trabalho_manual),
+    verificar(transporte),
+    verificar(coleta),
+    verificar(mineracao),
+    verificar(passiva_cat_helper),
+    verificar(nao_montavel).
 
-%-------------------------------------------------------------------------------------------------------------------------------%
-% Filtros
-% Predicado para buscar por nome
-% buscar_por_nome(+Nome, -Numero, -Tipo, -Trabalhos, -Montaria, -Passivas)
-buscar_por_nome(Nome, Numero, Tipo, Trabalhos, Montaria, Passivas) :-
-    pal(Numero, Nome, Tipo, Trabalhos, Montaria, Passivas).
+pal(chikipi) :-
+    verificar(tipo_neutro),
+    verificar(coleta),
+    verificar(agricultura),
+    verificar(passiva_egg_layer),
+    verificar(nao_montavel).
 
-% Predicado para buscar por tipo
-% buscar_por_tipo(+Tipo, -ListaNomes)
-buscar_por_tipo(Tipo, ListaNomes) :-
-    findall(Nome, (pal(_, Nome, Tipos, _, _, _), member(Tipo, Tipos)), ListaNomes).
+pal(lifmunk) :-
+    verificar(tipo_grama),
+    verificar(plantio),
+    verificar(trabalho_manual),
+    verificar(corte),
+    verificar(producao_medicinal),
+    verificar(coleta),
+    verificar(passiva_lifmunk_recoil),
+    verificar(nao_montavel).
 
-% Predicado para buscar por multiplos tipos
-% buscar_por_tipos(+ListaTipos, -ListaNomes)
-buscar_por_tipos(ListaTipos, ListaNomes) :-
-    findall(Nome, (pal(_, Nome, Tipos, _, _, _), subset(ListaTipos, Tipos)), ListaNomes).
+pal(foxparks) :-
+    verificar(tipo_fogo),
+    verificar(acendimento),
+    verificar(passiva_foxparks_partner),
+    verificar(nao_montavel).
 
-% Predicado para buscar por uma habilidade de trabalho específica
-% buscar_por_trabalho(+Trabalho, -ListaNomes)
-buscar_por_trabalho(Trabalho, ListaNomes) :-
-    findall(Nome, (pal(_, Nome, _, Trabalhos, _, _), member(Trabalho, Trabalhos)), ListaNomes).
+pal(rushoar) :-
+    verificar(tipo_terra),
+    verificar(mineracao),
+    verificar(passiva_hard_head),
+    verificar(montavel).
 
-% Predicado para buscar por multiplas habilidades
-% buscar_por_trabalhos(+ListaTrabalhos, -ListaNomes)
-buscar_por_trabalhos(ListaTrabalhos, ListaNomes) :-
-    findall(Nome, (pal(_, Nome, _, Trabalhos, _, _), subset(ListaTrabalhos, Trabalhos)), ListaNomes).
+pal(direhowl) :-
+    verificar(tipo_neutro),
+    verificar(transporte),
+    verificar(passiva_direhowl_rider),
+    verificar(montavel).
 
-% Predicado para buscar Pals montáveis
-% buscar_por_montaria(-ListaNomes)
-buscar_por_montaria(ListaNomes) :-
-    findall(Nome, pal(_, Nome, _, _, sim, _), ListaNomes).
+pal(mossanda) :-
+    verificar(tipo_grama),
+    verificar(corte),
+    verificar(transporte),
+    verificar(passiva_grenadier_panda),
+    verificar(montavel).
 
-% Predicado para buscar por número
-% buscar_por_numero(+Numero, -Nome, -Tipo, -Trabalhos, -Montaria, -Passivas)
-buscar_por_numero(Numero, Nome, Tipo, Trabalhos, Montaria, Passivas) :-
-    pal(Numero, Nome, Tipo, Trabalhos, Montaria, Passivas).
+pal(galeclaw) :-
+    verificar(tipo_vento),
+    verificar(transporte),
+    verificar(passiva_galeclaw_rider),
+    verificar(montavel).
 
-%-------------------------------------------------------------------------------------------------------------------------------%
-% Predicado principal
-especialista :-
-    write('Pense em um Pal e eu tentarei adivinhar quem é.'), nl,
-    write('O Pal é montável? (sim/nao/nao_sei): '),
-    read(RespMontaria),
-    findall(Nome, pal(_, Nome, _, _, _, _), ListaPals),
-    filtrar_montaria(ListaPals, RespMontaria, PalsFiltrados),
-    tipos_possiveis(ListaTipos),
-    trabalhos_possiveis(ListaTrabalhos),
-    intercalar(ListaTipos, ListaTrabalhos, ListaPerguntas),
-    perguntar_caracteristicas(ListaPerguntas, PalsFiltrados, [], [], ResultadoFinal),
-    exibir_resultado(ResultadoFinal),
-    limpar_variaveis.
+pal(kitsun) :-
+    verificar(tipo_fogo),
+    verificar(acendimento),
+    verificar(passiva_clear_mind),
+    verificar(montavel).
 
-%-------------------------------------------------------------------------------------------------------------------------------%
-% Auxiliares
+pal(surfent) :-
+    verificar(tipo_agua),
+    verificar(transporte),
+    verificar(passiva_swift_swimmer),
+    verificar(montavel).
 
-% Intercala duas listas
-intercalar([], [], []).
-intercalar([H1|T1], [], [tipo-H1|Resto]) :-
-    intercalar(T1, [], Resto).
-intercalar([], [H2|T2], [trabalho-H2|Resto]) :-
-    intercalar([], T2, Resto).
-intercalar([H1|T1], [H2|T2], [tipo-H1, trabalho-H2|Resto]) :-
-    intercalar(T1, T2, Resto).
+pal(mammorest) :-
+    verificar(tipo_terra),
+    verificar(corte),
+    verificar(mineracao),
+    verificar(passiva_gaia_crusher),
+    verificar(montavel).
 
-% Pergunta sobre características e filtra os Pals
-perguntar_caracteristicas([], Pals, _, _, Pals).
-perguntar_caracteristicas(_, [Unico], _, _, [Unico]) :-
-    write('Você está pensando em: '), write(Unico), nl,
-    write('Fim do jogo!'), nl.
+pal(grizzbolt) :-
+    verificar(tipo_eletrico),
+    verificar(geracao_eletricidade),
+    verificar(trabalho_manual),
+    verificar(transporte),
+    verificar(corte),
+    verificar(passiva_yellow_tank),
+    verificar(montavel).
 
-perguntar_caracteristicas([tipo-Tipo|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
-    length(TiposConfirmados, N),
-    ( N >= 2 ->
-        perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal)
-    ;
-        format('O Pal possui o tipo ~w? (sim/nao/nao_sei): ', [Tipo]),
-        read(Resposta),
-        (Resposta == sim ->
-            incluir_tipo(Pals, Tipo, PalsFiltrados),
-            append(TiposConfirmados, [Tipo], NovosTipos)
-        ; Resposta == nao ->
-            excluir_tipo(Pals, Tipo, PalsFiltrados),
-            NovosTipos = TiposConfirmados
-        ;
-            PalsFiltrados = Pals,
-            NovosTipos = TiposConfirmados
-        ),
-        perguntar_caracteristicas(Resto, PalsFiltrados, NovosTipos, TrabalhosConfirmados, ResultadoFinal)
-    ).
+pal(jetragon) :-
+    verificar(tipo_dragao),
+    verificar(coleta),
+    verificar(passiva_aerial_missile),
+    verificar(montavel).
 
-perguntar_caracteristicas([trabalho-Trabalho|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
-    format('O Pal possui a habilidade de trabalho ~w? (sim/nao/nao_sei): ', [Trabalho]),
+% Regras principais
+iniciar :-
+    pal(Pal),
+    write('Eu acho que o Pal é: '), write(Pal), nl,
+    undo.
+
+iniciar :-
+    write('Não consegui identificar o Pal com base nas respostas.'), nl,
+    undo.
+
+% Sistema de perguntas
+:- dynamic yes/1, no/1.
+
+verificar(Fato) :-
+    yes(Fato), !.
+
+verificar(Fato) :-
+    no(Fato), !, fail.
+
+verificar(Fato) :-
+    perguntar(Fato).
+
+perguntar(Fato) :-
+    traduzir(Fato, Pergunta),
+    format('O Pal possui: ~w (s/n)? ', [Pergunta]),
     read(Resposta),
-    (Resposta == sim ->
-        incluir_trabalho(Pals, Trabalho, PalsFiltrados),
-        append(TrabalhosConfirmados, [Trabalho], NovosTrabalhos)
-    ; Resposta == nao ->
-        excluir_trabalho(Pals, Trabalho, PalsFiltrados),
-        NovosTrabalhos = TrabalhosConfirmados
-    ;
-        PalsFiltrados = Pals,
-        NovosTrabalhos = TrabalhosConfirmados
-    ),
-    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, NovosTrabalhos, ResultadoFinal).
+    nl,
+    (Resposta == s ; Resposta == sim ->
+        assertz(yes(Fato));
+        assertz(no(Fato)), fail).
 
-%-------------------------------------------------------------------------------------------------------------------------------%
-% Funções auxiliares de filtragem
+undo :- retract(yes(_)), fail.
+undo :- retract(no(_)), fail.
+undo.
 
-% Filtra Pals por montaria
-filtrar_montaria(Pals, nao_sei, Pals).
-filtrar_montaria(Pals, RespMontaria, PalsFiltrados) :-
-    include({RespMontaria}/[Nome]>>pal(_, Nome, _, _, RespMontaria, _), Pals, PalsFiltrados).
+% Traduções para perguntas mais legíveis
+traduzir(tipo_fogo, 'tipo Fogo').
+traduzir(tipo_agua, 'tipo Água').
+traduzir(tipo_grama, 'tipo Grama').
+traduzir(tipo_terra, 'tipo Terra').
+traduzir(tipo_vento, 'tipo Vento').
+traduzir(tipo_eletrico, 'tipo Elétrico').
+traduzir(tipo_dragao, 'tipo Dragão').
+traduzir(tipo_neutro, 'tipo Neutro').
 
-tem_montaria(Resp, Nome) :-
-    pal(_, Nome, _, _, Resp, _).
+traduzir(trabalho_manual, 'habilidade Trabalho Manual').
+traduzir(transporte, 'habilidade Transporte').
+traduzir(agricultura, 'habilidade Agricultura').
+traduzir(coleta, 'habilidade Coleta').
+traduzir(mineracao, 'habilidade Mineração').
+traduzir(plantio, 'habilidade Plantio').
+traduzir(corte, 'habilidade Corte').
+traduzir(producao_medicinal, 'habilidade Produção Medicinal').
+traduzir(acendimento, 'habilidade Acendimento').
+traduzir(geracao_eletricidade, 'habilidade Geração de Eletricidade').
 
-% Inclui Pals que possuem o tipo especificado
-incluir_tipo(Pals, Tipo, PalsFiltrados) :-
-    include(tem_tipo(Tipo), Pals, PalsFiltrados).
+traduzir(passiva_fluffy_shield, 'passiva Fluffy Shield').
+traduzir(passiva_cat_helper, 'passiva Cat Helper').
+traduzir(passiva_egg_layer, 'passiva Egg Layer').
+traduzir(passiva_lifmunk_recoil, 'passiva Lifmunk Recoil').
+traduzir(passiva_foxparks_partner, 'passiva Foxparks Partner').
+traduzir(passiva_hard_head, 'passiva Hard Head').
+traduzir(passiva_direhowl_rider, 'passiva Direhowl Rider').
+traduzir(passiva_grenadier_panda, 'passiva Grenadier Panda').
+traduzir(passiva_galeclaw_rider, 'passiva Galeclaw Rider').
+traduzir(passiva_clear_mind, 'passiva Clear Mind').
+traduzir(passiva_swift_swimmer, 'passiva Swift Swimmer').
+traduzir(passiva_gaia_crusher, 'passiva Gaia Crusher').
+traduzir(passiva_yellow_tank, 'passiva Yellow Tank').
+traduzir(passiva_aerial_missile, 'passiva Aerial Missile').
 
-tem_tipo(Tipo, Nome) :-
-    pal(_, Nome, Tipos, _, _, _),
-    member(Tipo, Tipos).
-
-% Inclui Pals que possuem a habilidade de trabalho especificada
-incluir_trabalho(Pals, Trabalho, PalsFiltrados) :-
-    include(tem_trabalho(Trabalho), Pals, PalsFiltrados).
-
-tem_trabalho(Trabalho, Nome) :-
-    pal(_, Nome, _, Trabalhos, _, _),
-    member(Trabalho, Trabalhos).
-
-% Remove Pals que possuem o tipo especificado
-excluir_tipo(Pals, Tipo, PalsFiltrados) :-
-    exclude(tem_tipo(Tipo), Pals, PalsFiltrados).
-
-% Remove Pals que possuem a habilidade de trabalho especificada
-excluir_trabalho(Pals, Trabalho, PalsFiltrados) :-
-    exclude(tem_trabalho(Trabalho), Pals, PalsFiltrados).
-
-%-------------------------------------------------------------------------------------------------------------------------------%
-% Resultado final
-exibir_resultado([]) :-
-    write('Não consegui encontrar um Pal com essas características.'), nl,
-    write('Fim do jogo!'), nl.
-exibir_resultado([Unico]) :-
-    write('Você está pensando em: '), write(Unico), nl,
-    write('Fim do jogo!'), nl.
-exibir_resultado(Pals) :-
-    sort(Pals, PalsOrdenados),
-    write('Os Pals que correspondem às características são: '), nl,
-    listar_pals(PalsOrdenados),
-    write('Fim do jogo!'), nl.
-
-% Lista os Pals encontrados
-listar_pals([]).
-listar_pals([H|T]) :-
-    write('- '), write(H), nl,
-    listar_pals(T).
-
-%-------------------------------------------------------------------------------------------------------------------------------%
-% Limpeza
-limpar_variaveis :-
-    (nb_current(tipos_confirmados, _) -> nb_delete(tipos_confirmados) ; true),
-    (nb_current(trabalhos_confirmados, _) -> nb_delete(trabalhos_confirmados) ; true),
-    (nb_current(pals_filtrados, _) -> nb_delete(pals_filtrados) ; true).
+traduzir(montavel, 'montaria SIM').
+traduzir(nao_montavel, 'montaria NÃO').
