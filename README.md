@@ -2,7 +2,7 @@
 
 ## INSTALAR
 
-```
+```sh
 sudo apt-add-repository ppa:swi-prolog/stable
 sudo apt-get update
 sudo apt-get install swi-prolog
@@ -10,7 +10,7 @@ sudo apt-get install swi-prolog
 
 ## RODAR
 
-```
+```sh
 swipl -s palworld.pl
 ```
 
