@@ -17,7 +17,7 @@ swipl -s palworld.pl
 ## COMO USAR
 
 ### Pesquisas
-
+<!-- 
 **OBS: o jogo esta em desenvolvimento entao os resultados apresentados na documentacao podem ser diferentes dos reais mas o formato do retorno nao.**
 
 - Buscar pelo nome:
@@ -86,7 +86,7 @@ swipl -s palworld.pl
     Tipo = eletrico,
     Trabalhos = [geracao_eletricidade, trabalho_manual, transporte, corte],
     Montaria = sim,
-    Passivas = [yellow_tank].
+    Passivas = [yellow_tank]. -->
 
 ### Iniciar o especialista em Pal
 
