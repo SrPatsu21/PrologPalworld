@@ -100,6 +100,9 @@ perguntar_caracteristicas([tipo-Tipo|Resto], Pals, TiposConfirmados, TrabalhosCo
     (Resposta == sim ->
         incluir_tipo(Pals, Tipo, PalsFiltrados),
         append(TiposConfirmados, [Tipo], NovosTipos)
+    ; Resposta == nao ->
+        excluir_tipo(Pals, Tipo, PalsFiltrados),
+        NovosTipos = TiposConfirmados
     ;
         PalsFiltrados = Pals,
         NovosTipos = TiposConfirmados
@@ -111,6 +114,9 @@ perguntar_caracteristicas([trabalho-Trabalho|Resto], Pals, TiposConfirmados, Tra
     (Resposta == sim ->
         incluir_trabalho(Pals, Trabalho, PalsFiltrados),
         append(TrabalhosConfirmados, [Trabalho], NovosTrabalhos)
+    ; Resposta == nao ->
+        excluir_trabalho(Pals, Trabalho, PalsFiltrados),
+        NovosTrabalhos = TrabalhosConfirmados
     ;
         PalsFiltrados = Pals,
         NovosTrabalhos = TrabalhosConfirmados
@@ -140,6 +146,14 @@ incluir_trabalho(Pals, Trabalho, PalsFiltrados) :-
 tem_trabalho(Trabalho, Nome) :-
     pal(_, Nome, _, Trabalhos, _, _),
     member(Trabalho, Trabalhos).
+
+% Remove Pals que possuem o tipo especificado
+excluir_tipo(Pals, Tipo, PalsFiltrados) :-
+    exclude(tem_tipo(Tipo), Pals, PalsFiltrados).
+
+% Remove Pals que possuem a habilidade de trabalho especificada
+excluir_trabalho(Pals, Trabalho, PalsFiltrados) :-
+    exclude(tem_trabalho(Trabalho), Pals, PalsFiltrados).
 
 % Exibe o resultado final
 exibir_resultado([]) :-
