@@ -21,7 +21,7 @@ iniciar_especialista :-
     trabalhos_possiveis(ListaTrabalhos),
     findall(Nome, pal(_, Nome, _, _, _, _, _, _, _), ListaPals),
     intercalar(ListaTipos, ListaTrabalhos, ListaPerguntas),
-    perguntar_caracteristicas(ListaPerguntas, ListaPals, [], [], ResultadoFinal),
+    perguntar_caracteristicas(ListaPerguntas, ListaPals, [], [], _ResultadoFinal),
     limpar_variaveis.
 
 %-------------------------------------------------------------------------------------------------------------------------------%
@@ -34,16 +34,16 @@ intercalar([], [H2|T2], [trabalho-H2|Resto]) :-
 intercalar([H1|T1], [H2|T2], [tipo-H1, trabalho-H2|Resto]) :-
     intercalar(T1, T2, Resto).
 
-perguntar_caracteristicas(_, [Unico], _, _, [Unico]) :-
-
+% Nenhum Pal restante
 perguntar_caracteristicas([], [], _, _, []) :-
+    tentar_adivinhar([], []).
 
-perguntar_caracteristicas([], [Unico], _, _, [Unico]) :-
-
-perguntar_caracteristicas([], Pals, _TiposConfirmados, _TrabalhosConfirmados, ResultadoFinal) :-
+% Nenhuma pergunta restante, com 1 ou mais Pals
+perguntar_caracteristicas([], Pals, _, _, ResultadoFinal) :-
     Pals \= [],
     tentar_adivinhar(Pals, ResultadoFinal).
 
+% Continua perguntando sobre tipos
 perguntar_caracteristicas([tipo-Tipo|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
     length(TiposConfirmados, N),
     ( N >= 2 ->
@@ -64,6 +64,7 @@ perguntar_caracteristicas([tipo-Tipo|Resto], Pals, TiposConfirmados, TrabalhosCo
         perguntar_caracteristicas(Resto, PalsFiltrados, NovosTipos, TrabalhosConfirmados, ResultadoFinal)
     ).
 
+% Continua perguntando sobre trabalhos
 perguntar_caracteristicas([trabalho-Trabalho|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
     format('O Pal possui a habilidade de trabalho ~w? (sim/nao/nao_sei): ', [Trabalho]),
     read(Resposta),
@@ -79,6 +80,7 @@ perguntar_caracteristicas([trabalho-Trabalho|Resto], Pals, TiposConfirmados, Tra
     ),
     perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, NovosTrabalhos, ResultadoFinal).
 
+% Continua perguntando sobre vida
 perguntar_caracteristicas([vida|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
     write('O Pal possui vida base maior ou igual a 100? (sim/nao/nao_sei): '),
     read(Resposta),
@@ -91,6 +93,7 @@ perguntar_caracteristicas([vida|Resto], Pals, TiposConfirmados, TrabalhosConfirm
     ),
     perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal).
 
+% Continua perguntando sobre ataque
 perguntar_caracteristicas([ataque|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
     write('O Pal possui ataque base maior ou igual a 100? (sim/nao/nao_sei): '),
     read(Resposta),
@@ -103,6 +106,7 @@ perguntar_caracteristicas([ataque|Resto], Pals, TiposConfirmados, TrabalhosConfi
     ),
     perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal).
 
+% Continua perguntando sobre defesa
 perguntar_caracteristicas([defesa|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
     write('O Pal possui defesa base maior ou igual a 100? (sim/nao/nao_sei): '),
     read(Resposta),
