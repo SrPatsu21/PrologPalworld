@@ -1,16 +1,16 @@
 % BASE DE DADOS
-% pal(Número, Nome, [Tipos], Habilidade, [Trabalhos], Drop, VidaBase, AtaqueBase, DefesaBase).
+% pal(Número, Nome, [Tipos], Habilidade, [Trabalhos], Drop, VidaBase, AtaqueBase, DefesaBase, Montaria).
 :- [base_palworld].
 
 %-------------------------------------------------------------------------------------------------------------------------------%
 % Tipos disponíveis
 tipos_possiveis(ListaTipos) :-
-    findall(Tipo, (pal(_, _, Tipos, _, _, _, _, _, _), member(Tipo, Tipos)), TiposRepetidos),
+    findall(Tipo, (pal(_, _, Tipos, _, _, _, _, _, _, _), member(Tipo, Tipos)), TiposRepetidos),
     sort(TiposRepetidos, ListaTipos).
 
 % Trabalhos disponíveis
 trabalhos_possiveis(ListaTrabalhos) :-
-    findall(Trabalho, (pal(_, _, _, _, Trabalhos, _, _, _, _), member(Trabalho, Trabalhos)), TrabalhosRepetidos),
+    findall(Trabalho, (pal(_, _, _, _, Trabalhos, _, _, _, _, _), member(Trabalho, Trabalhos)), TrabalhosRepetidos),
     sort(TrabalhosRepetidos, ListaTrabalhos).
 
 %-------------------------------------------------------------------------------------------------------------------------------%
@@ -19,14 +19,17 @@ iniciar_especialista :-
     write('Pense em um Pal e eu tentarei adivinhar quem é.'), nl,
     tipos_possiveis(ListaTipos),
     trabalhos_possiveis(ListaTrabalhos),
-    findall(Nome, pal(_, Nome, _, _, _, _, _, _, _), ListaPals),
-    intercalar(ListaTipos, ListaTrabalhos, ListaPerguntas),
+    findall(Nome, pal(_, Nome, _, _, _, _, _, _, _, _), ListaPals),
+    intercalar(ListaTipos, ListaTrabalhos, PerguntasBase),
+    ListaPerguntas = [montaria | PerguntasBase],
     perguntar_caracteristicas(ListaPerguntas, ListaPals, [], [], _ResultadoFinal),
     limpar_variaveis.
 
 %-------------------------------------------------------------------------------------------------------------------------------%
 % Auxiliares
-intercalar([], [], [vida, ataque, defesa]).
+
+%Intercala perguntas
+intercalar([], [], [vida, ataque, defesa, montaria]).
 intercalar([H1|T1], [], [tipo-H1|Resto]) :-
     intercalar(T1, [], Resto).
 intercalar([], [H2|T2], [trabalho-H2|Resto]) :-
@@ -42,6 +45,14 @@ perguntar_caracteristicas([], [], _, _, []) :-
 perguntar_caracteristicas([], Pals, _, _, ResultadoFinal) :-
     Pals \= [],
     tentar_adivinhar(Pals, ResultadoFinal).
+
+% Pergunta sobre montaria
+perguntar_caracteristicas([montaria|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
+    write('O Pal é uma montaria? (sim/nao/nao_sei): '),
+    read(Resposta),
+    (Resposta == sim ; Resposta == nao ; Resposta == nao_sei),
+    incluir_montaria(Pals, Resposta, PalsFiltrados),
+    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal).
 
 % Continua perguntando sobre tipos
 perguntar_caracteristicas([tipo-Tipo|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
@@ -121,11 +132,12 @@ perguntar_caracteristicas([defesa|Resto], Pals, TiposConfirmados, TrabalhosConfi
 
 %-------------------------------------------------------------------------------------------------------------------------------%
 % Funções auxiliares de filtragem
+
 incluir_tipo(Pals, Tipo, PalsFiltrados) :-
     include(tem_tipo(Tipo), Pals, PalsFiltrados).
 
 tem_tipo(Tipo, Nome) :-
-    pal(_, Nome, Tipos, _, _, _, _, _, _),
+    pal(_, Nome, Tipos, _, _, _, _, _, _, _),
     member(Tipo, Tipos).
 
 excluir_tipo(Pals, Tipo, PalsFiltrados) :-
@@ -135,7 +147,7 @@ incluir_trabalho(Pals, Trabalho, PalsFiltrados) :-
     include(tem_trabalho(Trabalho), Pals, PalsFiltrados).
 
 tem_trabalho(Trabalho, Nome) :-
-    pal(_, Nome, _, _, Trabalhos, _, _, _, _),
+    pal(_, Nome, _, _, Trabalhos, _, _, _, _, _),
     member(Trabalho, Trabalhos).
 
 excluir_trabalho(Pals, Trabalho, PalsFiltrados) :-
@@ -149,7 +161,7 @@ excluir_vida(Pals, PalsFiltrados) :-
     exclude(tem_vida_maior_igual_100, Pals, PalsFiltrados).
 
 tem_vida_maior_igual_100(Nome) :-
-    pal(_, Nome, _, _, _, _, VidaBase, _, _),
+    pal(_, Nome, _, _, _, _, VidaBase, _, _, _),
     VidaBase >= 100.
 
 % Ataque Base
@@ -160,7 +172,7 @@ excluir_ataque(Pals, PalsFiltrados) :-
     exclude(tem_ataque_maior_igual_100, Pals, PalsFiltrados).
 
 tem_ataque_maior_igual_100(Nome) :-
-    pal(_, Nome, _, _, _, _, _, AtaqueBase, _),
+    pal(_, Nome, _, _, _, _, _, AtaqueBase, _, _),
     AtaqueBase >= 100.
 
 % Defesa Base
@@ -171,10 +183,24 @@ excluir_defesa(Pals, PalsFiltrados) :-
     exclude(tem_defesa_maior_igual_100, Pals, PalsFiltrados).
 
 tem_defesa_maior_igual_100(Nome) :-
-    pal(_, Nome, _, _, _, _, _, _, DefesaBase),
+    pal(_, Nome, _, _, _, _, _, _, DefesaBase, _),
     DefesaBase >= 100.
 
+incluir_montaria(Pals, sim, PalsFiltrados) :-
+    include(tem_montaria, Pals, PalsFiltrados).
+
+incluir_montaria(Pals, nao, PalsFiltrados) :-
+    exclude(tem_montaria, Pals, PalsFiltrados).
+
+% mantem a lista igual
+incluir_montaria(Pals, nao_sei, Pals).
+
+tem_montaria(Nome) :-
+    pal(_, Nome, _, _, _, _, _, _, _, sim).
+
 %-------------------------------------------------------------------------------------------------------------------------------%
+% Resultados
+
 listar_pals([]).
 listar_pals([H|T]) :-
     write('- '), write(H), nl,
@@ -202,7 +228,8 @@ tentar_adivinhar([Pal|Resto], ResultadoFinal) :-
     ).
 
 %-------------------------------------------------------------------------------------------------------------------------------%
-% Limpeza
+% Limpar dados
+
 limpar_variaveis :-
     (nb_current(tipos_confirmados, _) -> nb_delete(tipos_confirmados) ; true),
     (nb_current(trabalhos_confirmados, _) -> nb_delete(trabalhos_confirmados) ; true),
