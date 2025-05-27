@@ -1,9 +1,10 @@
 % BASE DE DADOS
-% pal(Número, Nome, [Tipos], Habilidade, [Trabalhos], Drop, VidaBase, AtaqueBase, DefesaBase, Montaria).
+% pal(Número, Nome, [Tipos], Habilidade, [Trabalhos], [Drop], VidaBase, AtaqueBase, DefesaBase, Montaria).
 :- [base_palworld].
 
 %-------------------------------------------------------------------------------------------------------------------------------%
 % Tipos disponíveis
+
 tipos_possiveis(ListaTipos) :-
     findall(Tipo, (pal(_, _, Tipos, _, _, _, _, _, _, _), member(Tipo, Tipos)), TiposRepetidos),
     sort(TiposRepetidos, ListaTipos).
@@ -12,6 +13,16 @@ tipos_possiveis(ListaTipos) :-
 trabalhos_possiveis(ListaTrabalhos) :-
     findall(Trabalho, (pal(_, _, _, _, Trabalhos, _, _, _, _, _), member(Trabalho, Trabalhos)), TrabalhosRepetidos),
     sort(TrabalhosRepetidos, ListaTrabalhos).
+
+% Extrai todos os tipos possíveis da lista de Pals restantes
+tipos_possiveis(Pals, TiposUnicos) :-
+    findall(Tipo, (member(Nome, Pals), pal(_, Nome, Tipos, _, _, _, _, _, _, _), member(Tipo, Tipos)), TodosTipos),
+    sort(TodosTipos, TiposUnicos).
+
+% Extrai todos os trabalhos possíveis da lista de Pals restantes
+trabalhos_possiveis(Pals, TrabalhosUnicos) :-
+    findall(Trabalho, (member(Nome, Pals), pal(_, Nome, _, _, Trabalhos, _, _, _, _, _), member(Trabalho, Trabalhos)), TodosTrabalhos),
+    sort(TodosTrabalhos, TrabalhosUnicos).
 
 %-------------------------------------------------------------------------------------------------------------------------------%
 % Predicado principal
@@ -29,7 +40,7 @@ iniciar_especialista :-
 % Auxiliares
 
 %Intercala perguntas
-intercalar([], [], [vida, ataque, defesa, montaria]).
+intercalar([], [], [vida, ataque, defesa]).
 intercalar([H1|T1], [], [tipo-H1|Resto]) :-
     intercalar(T1, [], Resto).
 intercalar([], [H2|T2], [trabalho-H2|Resto]) :-
@@ -40,6 +51,10 @@ intercalar([H1|T1], [H2|T2], [tipo-H1, trabalho-H2|Resto]) :-
 % Nenhum Pal restante
 perguntar_caracteristicas([], [], _, _, []) :-
     tentar_adivinhar([], []).
+
+% Pergunta restantes, com apenas 1 possibilidade
+perguntar_caracteristicas(_, [Pal], _, _, [ResultadoFinal]) :-
+    tentar_adivinhar([Pal], [ResultadoFinal]).
 
 % Nenhuma pergunta restante, com 1 ou mais Pals
 perguntar_caracteristicas([], Pals, _, _, ResultadoFinal) :-
@@ -60,36 +75,48 @@ perguntar_caracteristicas([tipo-Tipo|Resto], Pals, TiposConfirmados, TrabalhosCo
     ( N >= 2 ->
         perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal)
     ;
-        format('O Pal possui o tipo ~w? (sim/nao/nao_sei): ', [Tipo]),
-        read(Resposta),
-        (Resposta == sim ->
-            incluir_tipo(Pals, Tipo, PalsFiltrados),
-            append(TiposConfirmados, [Tipo], NovosTipos)
-        ; Resposta == nao ->
-            excluir_tipo(Pals, Tipo, PalsFiltrados),
-            NovosTipos = TiposConfirmados
+        tipos_possiveis(Pals, TiposPossiveis),
+        ( \+ member(Tipo, TiposPossiveis) ->
+            % Tipo não mais relevante, pula para próxima pergunta
+            perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal)
         ;
-            PalsFiltrados = Pals,
-            NovosTipos = TiposConfirmados
-        ),
-        perguntar_caracteristicas(Resto, PalsFiltrados, NovosTipos, TrabalhosConfirmados, ResultadoFinal)
+            format('O Pal possui o tipo ~w? (sim/nao/nao_sei): ', [Tipo]),
+            read(Resposta),
+            (Resposta == sim ->
+                incluir_tipo(Pals, Tipo, PalsFiltrados),
+                append(TiposConfirmados, [Tipo], NovosTipos)
+            ; Resposta == nao ->
+                excluir_tipo(Pals, Tipo, PalsFiltrados),
+                NovosTipos = TiposConfirmados
+            ;
+                PalsFiltrados = Pals,
+                NovosTipos = TiposConfirmados
+            ),
+            perguntar_caracteristicas(Resto, PalsFiltrados, NovosTipos, TrabalhosConfirmados, ResultadoFinal)
+        )
     ).
 
 % Continua perguntando sobre trabalhos
 perguntar_caracteristicas([trabalho-Trabalho|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
-    format('O Pal possui a habilidade de trabalho ~w? (sim/nao/nao_sei): ', [Trabalho]),
-    read(Resposta),
-    (Resposta == sim ->
-        incluir_trabalho(Pals, Trabalho, PalsFiltrados),
-        append(TrabalhosConfirmados, [Trabalho], NovosTrabalhos)
-    ; Resposta == nao ->
-        excluir_trabalho(Pals, Trabalho, PalsFiltrados),
-        NovosTrabalhos = TrabalhosConfirmados
+    trabalhos_possiveis(Pals, TrabalhosPossiveis),
+    ( \+ member(Trabalho, TrabalhosPossiveis) ->
+        % Trabalho não mais relevante, pula para próxima pergunta
+        perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal)
     ;
-        PalsFiltrados = Pals,
-        NovosTrabalhos = TrabalhosConfirmados
-    ),
-    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, NovosTrabalhos, ResultadoFinal).
+        format('O Pal possui a habilidade de trabalho ~w? (sim/nao/nao_sei): ', [Trabalho]),
+        read(Resposta),
+        (Resposta == sim ->
+            incluir_trabalho(Pals, Trabalho, PalsFiltrados),
+            append(TrabalhosConfirmados, [Trabalho], NovosTrabalhos)
+        ; Resposta == nao ->
+            excluir_trabalho(Pals, Trabalho, PalsFiltrados),
+            NovosTrabalhos = TrabalhosConfirmados
+        ;
+            PalsFiltrados = Pals,
+            NovosTrabalhos = TrabalhosConfirmados
+        ),
+        perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, NovosTrabalhos, ResultadoFinal)
+    ).
 
 % Continua perguntando sobre vida
 perguntar_caracteristicas([vida|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
