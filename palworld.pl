@@ -1,5 +1,5 @@
 % BASE DE DADOS
-% pal(Número, Nome, [Tipos], Habilidade, [Trabalhos], [Drop], VidaBase, AtaqueBase, DefesaBase, Montaria).
+% pal(Número, Nome, [Tipos], Habilidade, [Trabalhos], [Drops], VidaBase, AtaqueBase, DefesaBase, Montaria).
 :- [base_palworld].
 
 %-------------------------------------------------------------------------------------------------------------------------------%
@@ -14,33 +14,55 @@ trabalhos_possiveis(ListaTrabalhos) :-
     findall(Trabalho, (pal(_, _, _, _, Trabalhos, _, _, _, _, _), member(Trabalho, Trabalhos)), TrabalhosRepetidos),
     sort(TrabalhosRepetidos, ListaTrabalhos).
 
-% Extrai todos os tipos possíveis da lista de Pals restantes
-tipos_possiveis(Pals, TiposUnicos) :-
-    findall(Tipo, (member(Nome, Pals), pal(_, Nome, Tipos, _, _, _, _, _, _, _), member(Tipo, Tipos)), TodosTipos),
-    sort(TodosTipos, TiposUnicos).
+% Drops disponíveis
+drops_possiveis(ListaDrops) :-
+    findall(Drop, (pal(_, _, _, _, _, Drops, _, _, _, _), member(Drop, Drops)), DropsRepetidos),
+    sort(DropsRepetidos, ListaDrops).
 
-% Extrai todos os trabalhos possíveis da lista de Pals restantes
-trabalhos_possiveis(Pals, TrabalhosUnicos) :-
-    findall(Trabalho, (member(Nome, Pals), pal(_, Nome, _, _, Trabalhos, _, _, _, _, _), member(Trabalho, Trabalhos)), TodosTrabalhos),
-    sort(TodosTrabalhos, TrabalhosUnicos).
+tipos_possiveis(Pals, TiposConfirmados, TiposPossiveis) :-
+    findall(Tipo,
+        (member(Pal, Pals), pal(_, Pal, Tipos, _, _, _, _, _, _, _), member(Tipo, Tipos)),
+        TodosTipos),
+    list_to_set(TodosTipos, TiposUnicos),
+    subtract(TiposUnicos, TiposConfirmados, TiposPossiveis).
+
+trabalhos_possiveis(Pals, TrabalhosConfirmados, TrabalhosPossiveis) :-
+    findall(Trabalho,
+        (member(Pal, Pals), pal(_, Pal, _, _, Trabalhos, _, _, _, _, _), member(Trabalho, Trabalhos)),
+        TodosTrabalhos),
+    list_to_set(TodosTrabalhos, TrabalhosUnicos),
+    subtract(TrabalhosUnicos, TrabalhosConfirmados, TrabalhosPossiveis).
+
+drops_possiveis(Pals, DropsConfirmados, DropsPossiveis) :-
+    findall(Drop,
+        (member(Pal, Pals), pal(_, Pal, _, _, _, Drops, _, _, _, _), member(Drop, Drops)),
+        TodosDrops),
+    list_to_set(TodosDrops, DropsUnicos),
+    subtract(DropsUnicos, DropsConfirmados, DropsPossiveis).
 
 %-------------------------------------------------------------------------------------------------------------------------------%
 % Predicado principal
 iniciar_especialista :-
     write('Pense em um Pal e eu tentarei adivinhar quem é.'), nl,
     tipos_possiveis(ListaTipos),
+    %write('Tipos possíveis: '), write(ListaTipos), nl,
     trabalhos_possiveis(ListaTrabalhos),
+    %write('Trabalhos possíveis: '), write(ListaTrabalhos), nl,
+    drops_possiveis(ListaDrops),
+    %write('Drops possíveis: '), write(ListaDrops), nl,
     findall(Nome, pal(_, Nome, _, _, _, _, _, _, _, _), ListaPals),
-    intercalar(ListaTipos, ListaTrabalhos, PerguntasBase),
-    ListaPerguntas = [montaria | PerguntasBase],
-    perguntar_caracteristicas(ListaPerguntas, ListaPals, [], [], _ResultadoFinal),
+    intercalar(ListaTipos, ListaTrabalhos, PerguntasTipoTrabalho),
+    maplist({}/[D, drop-D]>>true, ListaDrops, PerguntasDrops),
+    append([[montaria], PerguntasTipoTrabalho, PerguntasDrops, [vida, ataque, defesa]], Perguntas),
+    format('Ordem das perguntas: ~w~n', [Perguntas]),
+    perguntar_caracteristicas(Perguntas, ListaPals, [], [], []),
     limpar_variaveis.
 
 %-------------------------------------------------------------------------------------------------------------------------------%
 % Auxiliares
 
 %Intercala perguntas
-intercalar([], [], [vida, ataque, defesa]).
+intercalar([], [], []).
 intercalar([H1|T1], [], [tipo-H1|Resto]) :-
     intercalar(T1, [], Resto).
 intercalar([], [H2|T2], [trabalho-H2|Resto]) :-
@@ -49,36 +71,27 @@ intercalar([H1|T1], [H2|T2], [tipo-H1, trabalho-H2|Resto]) :-
     intercalar(T1, T2, Resto).
 
 % Nenhum Pal restante
-perguntar_caracteristicas([], [], _, _, []) :-
+perguntar_caracteristicas(_, [], _, _, _) :-
     tentar_adivinhar([], []).
 
 % Pergunta restantes, com apenas 1 possibilidade
-perguntar_caracteristicas(_, [Pal], _, _, [ResultadoFinal]) :-
-    tentar_adivinhar([Pal], [ResultadoFinal]).
+perguntar_caracteristicas(_, [Pal], _, _, _) :-
+    tentar_adivinhar([Pal]).
 
-% Nenhuma pergunta restante, com 1 ou mais Pals
-perguntar_caracteristicas([], Pals, _, _, ResultadoFinal) :-
+% Nenhuma pergunta restante, com mais de 1 Pal
+perguntar_caracteristicas([], Pals, _, _, _) :-
     Pals \= [],
-    tentar_adivinhar(Pals, ResultadoFinal).
-
-% Pergunta sobre montaria
-perguntar_caracteristicas([montaria|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
-    write('O Pal é uma montaria? (sim/nao/nao_sei): '),
-    read(Resposta),
-    (Resposta == sim ; Resposta == nao ; Resposta == nao_sei),
-    incluir_montaria(Pals, Resposta, PalsFiltrados),
-    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal).
+    tentar_adivinhar(Pals).
 
 % Continua perguntando sobre tipos
-perguntar_caracteristicas([tipo-Tipo|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
+perguntar_caracteristicas([tipo-Tipo|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados) :-
     length(TiposConfirmados, N),
     ( N >= 2 ->
-        perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal)
+        perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados)
     ;
-        tipos_possiveis(Pals, TiposPossiveis),
+        tipos_possiveis(Pals, TiposConfirmados, TiposPossiveis),
         ( \+ member(Tipo, TiposPossiveis) ->
-            % Tipo não mais relevante, pula para próxima pergunta
-            perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal)
+            perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados)
         ;
             format('O Pal possui o tipo ~w? (sim/nao/nao_sei): ', [Tipo]),
             read(Resposta),
@@ -92,16 +105,15 @@ perguntar_caracteristicas([tipo-Tipo|Resto], Pals, TiposConfirmados, TrabalhosCo
                 PalsFiltrados = Pals,
                 NovosTipos = TiposConfirmados
             ),
-            perguntar_caracteristicas(Resto, PalsFiltrados, NovosTipos, TrabalhosConfirmados, ResultadoFinal)
+            perguntar_caracteristicas(Resto, PalsFiltrados, NovosTipos, TrabalhosConfirmados, DropsConfirmados)
         )
     ).
 
 % Continua perguntando sobre trabalhos
-perguntar_caracteristicas([trabalho-Trabalho|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
-    trabalhos_possiveis(Pals, TrabalhosPossiveis),
+perguntar_caracteristicas([trabalho-Trabalho|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados) :-
+    trabalhos_possiveis(Pals, TrabalhosConfirmados, TrabalhosPossiveis),
     ( \+ member(Trabalho, TrabalhosPossiveis) ->
-        % Trabalho não mais relevante, pula para próxima pergunta
-        perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal)
+        perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados)
     ;
         format('O Pal possui a habilidade de trabalho ~w? (sim/nao/nao_sei): ', [Trabalho]),
         read(Resposta),
@@ -115,11 +127,56 @@ perguntar_caracteristicas([trabalho-Trabalho|Resto], Pals, TiposConfirmados, Tra
             PalsFiltrados = Pals,
             NovosTrabalhos = TrabalhosConfirmados
         ),
-        perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, NovosTrabalhos, ResultadoFinal)
+        perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, NovosTrabalhos, DropsConfirmados)
+    ).
+
+% Pergunta sobre montaria
+perguntar_caracteristicas([montaria|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados) :-
+    write('O Pal é uma montaria? (sim/nao/nao_sei): '),
+    read(Resposta),
+    member(Resposta, [sim, nao, nao_sei]),
+    (
+        Resposta == sim ->
+            incluir_montaria(Pals, PalsFiltrados)
+        ; Resposta == nao ->
+            excluir_montaria(Pals, PalsFiltrados)
+        ; Resposta == nao_sei ->
+            PalsFiltrados = Pals
+    ),
+    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados).
+
+perguntar_caracteristicas([drop-Drop | Resto], Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados) :-
+    drops_possiveis(Pals, DropsConfirmados, DropsPossiveis),
+    (
+        DropsPossiveis == [] ->
+            % Nenhum drop restante relevante, pula direto para os próximos
+            perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados)
+        ;
+        member(Drop, DropsPossiveis) ->
+            format('O Pal dropa ~w? (sim/nao/nao_sei): ', [Drop]),
+            read(Resposta),
+            member(Resposta, [sim, nao, nao_sei]),
+            (
+                Resposta == sim ->
+                    incluir_drop(Pals, Drop, Filtrados),
+                    NewDrops = [Drop | DropsConfirmados]
+                ;
+                Resposta == nao ->
+                    excluir_drop(Pals, Drop, Filtrados),
+                    NewDrops = DropsConfirmados
+                ;
+                Resposta == nao_sei ->
+                    Filtrados = Pals,
+                    NewDrops = DropsConfirmados
+            ),
+            perguntar_caracteristicas(Resto, Filtrados, TiposConfirmados, TrabalhosConfirmados, NewDrops)
+        ;
+            % Drop não está mais entre os possíveis drops → pular essa pergunta
+            perguntar_caracteristicas(Resto, Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados)
     ).
 
 % Continua perguntando sobre vida
-perguntar_caracteristicas([vida|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
+perguntar_caracteristicas([vida|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados) :-
     write('O Pal possui vida base maior ou igual a 100? (sim/nao/nao_sei): '),
     read(Resposta),
     (Resposta == sim ->
@@ -129,10 +186,10 @@ perguntar_caracteristicas([vida|Resto], Pals, TiposConfirmados, TrabalhosConfirm
     ;
         PalsFiltrados = Pals
     ),
-    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal).
+    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados).
 
 % Continua perguntando sobre ataque
-perguntar_caracteristicas([ataque|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
+perguntar_caracteristicas([ataque|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados) :-
     write('O Pal possui ataque base maior ou igual a 100? (sim/nao/nao_sei): '),
     read(Resposta),
     (Resposta == sim ->
@@ -142,10 +199,10 @@ perguntar_caracteristicas([ataque|Resto], Pals, TiposConfirmados, TrabalhosConfi
     ;
         PalsFiltrados = Pals
     ),
-    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal).
+    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados).
 
 % Continua perguntando sobre defesa
-perguntar_caracteristicas([defesa|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal) :-
+perguntar_caracteristicas([defesa|Resto], Pals, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados) :-
     write('O Pal possui defesa base maior ou igual a 100? (sim/nao/nao_sei): '),
     read(Resposta),
     (Resposta == sim ->
@@ -155,7 +212,7 @@ perguntar_caracteristicas([defesa|Resto], Pals, TiposConfirmados, TrabalhosConfi
     ;
         PalsFiltrados = Pals
     ),
-    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, ResultadoFinal).
+    perguntar_caracteristicas(Resto, PalsFiltrados, TiposConfirmados, TrabalhosConfirmados, DropsConfirmados).
 
 %-------------------------------------------------------------------------------------------------------------------------------%
 % Funções auxiliares de filtragem
@@ -213,45 +270,47 @@ tem_defesa_maior_igual_100(Nome) :-
     pal(_, Nome, _, _, _, _, _, _, DefesaBase, _),
     DefesaBase >= 100.
 
-incluir_montaria(Pals, sim, PalsFiltrados) :-
+incluir_montaria(Pals, PalsFiltrados) :-
     include(tem_montaria, Pals, PalsFiltrados).
 
-incluir_montaria(Pals, nao, PalsFiltrados) :-
+% Pal com montaria
+tem_montaria(Nome) :-
+    pal(_, Nome, _, _, _, _, _, _, _, montaria).
+
+excluir_montaria(Pals, PalsFiltrados) :-
     exclude(tem_montaria, Pals, PalsFiltrados).
 
-% mantem a lista igual
-incluir_montaria(Pals, nao_sei, Pals).
+incluir_drop(Pals, Drop, PalsFiltrados) :-
+    include(tem_drop(Drop), Pals, PalsFiltrados).
 
-tem_montaria(Nome) :-
-    pal(_, Nome, _, _, _, _, _, _, _, sim).
+tem_drop(Drop, Nome) :-
+    pal(_, Nome, _, _, _, Drops, _, _, _, _),
+    member(Drop, Drops).
+
+excluir_drop(Pals, Drop, PalsFiltrados) :-
+    exclude(tem_drop(Drop), Pals, PalsFiltrados).
 
 %-------------------------------------------------------------------------------------------------------------------------------%
 % Resultados
 
-listar_pals([]).
-listar_pals([H|T]) :-
-    write('- '), write(H), nl,
-    listar_pals(T).
-
-tentar_adivinhar([], []) :-
+tentar_adivinhar([]) :-
     write('Não consegui encontrar um Pal com essas características.'), nl,
     write('Fim do jogo!'), nl.
 
-tentar_adivinhar([Pal], [Pal]) :-
+tentar_adivinhar([Pal]) :-
     write('Você está pensando em: '), write(Pal), nl,
     write('Fim do jogo!'), nl.
 
-tentar_adivinhar([Pal|Resto], ResultadoFinal) :-
+tentar_adivinhar([Pal|Resto]) :-
     format('Você está pensando em ~w? (sim/nao): ', [Pal]),
     read(Resposta),
     (Resposta == sim ->
-        ResultadoFinal = [Pal],
         write('Acertei! Fim do jogo!'), nl
     ; Resposta == nao ->
-        tentar_adivinhar(Resto, ResultadoFinal)
+        tentar_adivinhar(Resto)
     ;
-        write('Resposta inválida. Por favor, responda com sim ou nao.'), nl,
-        tentar_adivinhar([Pal|Resto], ResultadoFinal)
+        write('Resposta inválida. Tente novamente.'), nl,
+        tentar_adivinhar([Pal|Resto])
     ).
 
 %-------------------------------------------------------------------------------------------------------------------------------%
