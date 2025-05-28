@@ -320,3 +320,34 @@ limpar_variaveis :-
     (nb_current(tipos_confirmados, _) -> nb_delete(tipos_confirmados) ; true),
     (nb_current(trabalhos_confirmados, _) -> nb_delete(trabalhos_confirmados) ; true),
     (nb_current(pals_filtrados, _) -> nb_delete(pals_filtrados) ; true).
+
+%-------------------------------------------------------------------------------------------------------------------------------%
+% Pesquisas avancadas
+
+% Buscar pelo nome
+pal_por_nome(Nome) :-
+    pal(Numero, Nome, Tipos, Habilidade, Trabalhos, Drops, Vida, Ataque, Defesa, Montaria),
+    format("~n--- Dados de ~w ---~n", [Nome]),
+    format("Número: ~w~nTipos: ~w~nHabilidade: ~w~nTrabalhos: ~w~nDrops: ~w~nVida: ~w~nAtaque: ~w~nDefesa: ~w~nMontaria: ~w~n",
+        [Numero, Tipos, Habilidade, Trabalhos, Drops, Vida, Ataque, Defesa, Montaria]).
+
+% Buscar pelo número
+pal_por_numero(Numero) :-
+    pal(Numero, Nome, Tipos, Habilidade, Trabalhos, Drops, Vida, Ataque, Defesa, Montaria),
+    format("~n--- Dados do Pal número ~w ---~n", [Numero]),
+    format("Nome: ~w~nTipos: ~w~nHabilidade: ~w~nTrabalhos: ~w~nDrops: ~w~nVida: ~w~nAtaque: ~w~nDefesa: ~w~nMontaria: ~w~n",
+        [Nome, Tipos, Habilidade, Trabalhos, Drops, Vida, Ataque, Defesa, Montaria]).
+
+% Buscar pelo trabalho
+pals_com_trabalho(Trabalho) :-
+    findall(Nome,
+        (pal(_, Nome, _, _, Trabalhos, _, _, _, _, _), member(Trabalho, Trabalhos)),
+        ListaNomes),
+    format("~nPals com o trabalho ~w: ~w~n", [Trabalho, ListaNomes]).
+
+% Buscar pelo drop
+pals_com_drop(Drop) :-
+    findall(Nome,
+        (pal(_, Nome, _, _, _, Drops, _, _, _, _), member(Drop, Drops)),
+        ListaNomes),
+    format("~nPals que dropam ~w: ~w~n", [Drop, ListaNomes]).
