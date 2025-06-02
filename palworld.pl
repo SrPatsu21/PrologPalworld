@@ -54,7 +54,9 @@ iniciar_especialista :-
     intercalar(ListaTipos, ListaTrabalhos, PerguntasTipoTrabalho),
     maplist({}/[D, drop-D]>>true, ListaDrops, PerguntasDrops),
     append([[montaria], PerguntasTipoTrabalho, PerguntasDrops, [vida, ataque, defesa]], Perguntas),
+    /*
     format('Ordem das perguntas: ~w~n', [Perguntas]),
+    */
     perguntar_caracteristicas(Perguntas, ListaPals, [], [], []),
     limpar_variaveis.
 
