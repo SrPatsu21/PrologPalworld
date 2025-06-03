@@ -137,3 +137,5 @@ O Pal possui o tipo dark? (sim/nao/nao_sei): |:
 
 ### Dados obtidos
 Ao todo foram digitalizados na database 122 pals, não sendo o número total de pals existentes no jogo porém já é um número julgado adequado para a demonstração deste jogo
+
+# Link do vídeo tutorial no YT <https://youtu.be/OUAADkNgAVU>
